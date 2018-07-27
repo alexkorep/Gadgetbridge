@@ -165,6 +165,20 @@ public class PebbleSupport extends AbstractSerialDeviceSupport {
         return true;
     }
 
+    private boolean forceReconnect() {
+        gbDeviceIOThread.quit();
+        gbDeviceIOThread.interrupt();
+        gbDeviceIOThread = null;
+        if (!connect()) {
+            return false;
+        }
+        try {
+            Thread.sleep(4000); // this is about the time the connect takes, so the notification can come though
+        } catch (InterruptedException ignored) {
+        }
+        return true;
+    }
+
     @Override
     public void onNotification(NotificationSpec notificationSpec) {
         String currentPrivacyMode = GBApplication.getPrefs().getString("pebble_pref_privacy_mode", getContext().getString(R.string.p_pebble_privacy_mode_off));
@@ -183,7 +197,8 @@ public class PebbleSupport extends AbstractSerialDeviceSupport {
                 notificationSpec.subject = "\n\n\n\n\n" + notificationSpec.subject;
             }
         }
-        if (reconnect()) {
+        // Force reconnects before sending the notification
+        if (forceReconnect()) {
             super.onNotification(notificationSpec);
         }
     }
